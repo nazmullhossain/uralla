@@ -1,9 +1,9 @@
-
-
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:task_project_today/pages/details_page.dart';
 import 'package:task_project_today/pages/search_pages.dart';
 
 import '../service/parcel_service.dart';
@@ -20,11 +20,10 @@ class _HomePageState extends State<HomePage> {
   TextEditingController recipientPhoneController = TextEditingController();
   TextEditingController recipientCity = TextEditingController();
   ParcelService parcelService = ParcelService();
+  StreamController<List<dynamic>> _streamController =
+  StreamController<List<dynamic>>();
 
-
-
-
-  Future<List<Map<String, dynamic>>> fetchData() async {
+ fetchData() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     final response = await http.get(
       Uri.parse(
@@ -35,13 +34,19 @@ class _HomePageState extends State<HomePage> {
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body)['content'];
-      return data.cast<Map<String, dynamic>>();
+       _streamController.add(data.cast<Map<String, dynamic>>()) ;
     } else {
       throw Exception('Failed to load data');
     }
   }
-
-
+@override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    Timer.periodic(Duration(seconds: 1), (timer) {
+      fetchData();
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -50,17 +55,20 @@ class _HomePageState extends State<HomePage> {
         centerTitle: true,
         backgroundColor: Colors.amber.withOpacity(0.5),
         actions: [
-          IconButton(onPressed: (){
-
-          }, icon: Icon(Icons.logout),),
-          IconButton(onPressed: (){
-
-            Navigator.push(context, MaterialPageRoute(builder: (_)=>ParcelSearchPage()));
-          }, icon: Icon(Icons.search))
+          IconButton(
+            onPressed: () {},
+            icon: Icon(Icons.logout),
+          ),
+          IconButton(
+              onPressed: () {
+                Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => ParcelSearchPage()));
+              },
+              icon: Icon(Icons.search))
         ],
       ),
-      body: FutureBuilder(
-        future: fetchData(),
+      body: StreamBuilder(
+        stream: _streamController.stream,
         builder: (BuildContext context, AsyncSnapshot snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -78,12 +86,17 @@ class _HomePageState extends State<HomePage> {
                       borderRadius: BorderRadius.circular(10)),
                   child: ListTile(
                     onTap: () {
-                      recipientNameController.text = parcel["recipientName"];
-                      recipientPhoneController.text = parcel["recipientPhone"];
-                      recipientCity.text = parcel["recipientCity"];
-
-                      editEm(parcel["_id"]);
-                      print("id ${parcel["_id"]}");
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => DetailsPage(
+                                  recipientAddress: parcel['recipientAddress'],
+                                  recipientArea: parcel['recipientArea'],
+                                  recipientCity: parcel['recipientCity'],
+                                  recipientName: parcel['recipientName'],
+                                  recipientPhone: parcel['recipientPhone'],
+                                  recipientZone: parcel['recipientZone'],
+                                  shopId: parcel['shopId'])));
                     },
 
                     title: Column(
@@ -101,10 +114,18 @@ class _HomePageState extends State<HomePage> {
 
                     trailing: Column(
                       children: [
-                        Text(
-                          "${parcel['amountToCollect']}",
-                          style: TextStyle(color: Colors.black, fontSize: 20),
-                        ),
+                        IconButton(
+                            onPressed: () {
+                              recipientNameController.text =
+                                  parcel["recipientName"];
+                              recipientPhoneController.text =
+                                  parcel["recipientPhone"];
+                              recipientCity.text = parcel["recipientCity"];
+
+                              editEm(parcel["_id"]);
+                              print("id ${parcel["_id"]}");
+                            },
+                            icon: Icon(Icons.edit)),
                       ],
                     ),
 

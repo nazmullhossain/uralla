@@ -1,0 +1,31 @@
+import 'dart:io';
+
+
+import 'package:flutter/material.dart';
+
+void showSnackBar(BuildContext context,String text){
+  ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(text))
+  );
+}
+// picked images
+// Future<List<File>> pickImage()async{
+//   List<File>images=[];
+//
+//   try{
+//     var files= await FilePicker.platform.pickFiles(
+//       type: FileType.image,
+//       allowMultiple: true,
+//
+//     );
+//
+//     if(files!=null && files.files.isNotEmpty){
+//       for(int i=0; i<files.files.length; i++){
+//         images.add(File(files.files[i].path!));
+//       }
+//     }
+//   }catch(e){
+//     print(e.toString());
+//   }
+//   return images;
+// }
